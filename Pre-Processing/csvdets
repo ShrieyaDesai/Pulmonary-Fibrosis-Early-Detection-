@@ -1,0 +1,32 @@
+Band-Energy Features (band_0 … band_7)
+
+These represent how energy is distributed across low–mid frequency ranges (100–2500 Hz).
+
+Why useful for fibrosis:
+
+Fibrosis lung sounds have high-frequency crackles (100–2000 Hz)
+
+Normal lung sounds have lower-frequency dominant energy
+
+These band energies help ML models differentiate crackles vs normal breath
+
+✓ This is one of the best handcrafted features.
+ 2. Total Energy
+
+Crackles and fibrosis sounds often have:
+
+short bursts of higher spectral energy
+
+more “spikey” energy in specific bands
+
+This helps the model catch “fibrotic events”.
+
+Spectral Centroid
+
+This measures the "brightness" of the sound:
+
+Higher centroid → more high-frequency content → common in fibrosis
+
+Lower centroid → normal airflow sounds
+
+Centroid is VERY predictive for pathological breath sounds
