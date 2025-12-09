@@ -63,6 +63,86 @@ Reversed → 110 = 6
 So rev[3] = 6.
 
 
-
-
 Returns complex numbers (magnitude + phase). For many ML tasks we just take magnitude.
+
+
+
+
+def cooley_tukey_fft(x): #iterative radix-2 FFT
+    x = np.asarray(x, dtype=complex)
+    n0 = x.shape[0]
+    if n0 == 0:
+        return x
+    n = _next_pow2(n0)
+    if n != n0:
+        x = np.pad(x, (0, n - n0))
+    rev = _bit_reversed_indices(n)
+    x = x[rev]
+    m = 2
+    while m <= n:
+        half = m // 2
+        w_m = np.exp(-2j * np.pi / m)
+        for k in range(0, n, m):
+            w = 1.0 + 0j
+            for j in range(half):
+                t = w * x[k + j + half]
+                u = x[k + j]
+                x[k + j] = u + t
+                x[k + j + half] = u - t
+                w *= w_m
+        m *= 2
+    return x
+
+m is the size of the DFT-subproblem being computed in this stage. It starts at 2 and doubles every stage: 2, 4, 8, ..., n.
+
+half is number of pairs (butterflies) per block: for m=8, half=4.
+
+w_m is the primitive m-th complex root of unity 𝑒^(−2𝜋𝑖/𝑚)
+
+
+
+
+def rfft_mag_cooley(x, n_fft=None):
+    x = np.asarray(x, dtype=float)
+    if n_fft is None:
+        n_fft = _next_pow2(len(x))
+    X = cooley_tukey_fft(x[:n_fft])
+    half = n_fft // 2 + 1
+    return np.abs(X[:half])
+This function does:
+
+Take the sound.
+
+Run your Cooley–Tukey FFT on it (that finds all frequencies).
+
+Keep only the first half (because real sounds have mirrored frequencies—you don’t need the second half).
+
+Take only the strength (magnitude), not direction/phase.
+
+Return that list of numbers.
+
+So it turns sound → a row of frequency energies
+
+
+: x[:n_fft] truncates the signal if it's longer than n_fft.
+
+For real input signals, the FFT is symmetric:
+
+Frequency bins above Nyquist are mirror images.
+
+So you only keep the first half → “one-sided spectrum”.
+
+Most ML models learn mainly from how much energy is in each frequency.
+
+Phase rarely helps for lung-sound classification.
+
+Magnitude gives cleaner, stable features.
+
+rfft_mag_cooley converts each audio window into its one-sided magnitude spectrum using our custom FFT.
+Only the first half of the FFT is taken because the input is real-valued and the second half is redundant.
+Magnitude is used instead of phase because it captures the energy distribution of breath sounds, which is key for detecting fibrosis.”
+
+A bigger n_fft = more detail in the frequency picture.A bigger n_fft = more detail in the frequency picture.
+
+
+Powers of w_m produce the twiddle factors used inside butterflies.
